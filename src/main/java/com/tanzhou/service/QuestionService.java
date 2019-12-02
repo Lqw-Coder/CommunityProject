@@ -1,5 +1,6 @@
 package com.tanzhou.service;
 
+import com.tanzhou.dto.PaginationDTO;
 import com.tanzhou.dto.QuestionDTO;
 import com.tanzhou.mapper.QuestionMapper;
 import com.tanzhou.mapper.UserMapper;
@@ -19,9 +20,19 @@ public class QuestionService {
 
     @Autowired
     private UserMapper userMapper;
-
-    public List<QuestionDTO> list(){
-        List<Question> questions = questionMapper.list();
+    public PaginationDTO list(Integer page,Integer size){
+        PaginationDTO paginationDTO = new PaginationDTO();
+        Integer totalCount = questionMapper.count();
+        paginationDTO.setPagination(totalCount,page,size);
+        if(page<1){
+            page = 1;
+        }
+        if(page > paginationDTO.getTotalPage()){
+            page = paginationDTO.getTotalPage();
+        }
+        //设置偏移量
+        Integer offset = size *(page-1);
+        List<Question> questions = questionMapper.list(offset,size);
         List<QuestionDTO> questionDTOS = new ArrayList<>();
         for (Question question:questions){
             User user = userMapper.findById(question.getCreator());
@@ -30,6 +41,51 @@ public class QuestionService {
             questionDTO.setUser(user);
             questionDTOS.add(questionDTO);
         }
-        return questionDTOS;
+        paginationDTO.setQuestions(questionDTOS);
+        return paginationDTO;
+    }
+
+    public PaginationDTO list(Integer id, Integer page, Integer size) {
+        //创建封装对象
+        PaginationDTO paginationDTO = new PaginationDTO();
+        //查询当前用户自己的提问数目
+        Integer totalCount = questionMapper.countByUserId(id);
+        paginationDTO.setPagination(totalCount,page,size);
+        //查询当前用户自己的提问对象
+        Integer offset = size *(page-1);
+        List<Question> questions = questionMapper.listByUserId(id,offset,size);
+        List<QuestionDTO> questionDTOS = new ArrayList<>();
+        //将question疯转为DTO对象，并将他传入到PagnationDTO
+        for (Question question:questions){
+            User user = userMapper.findById(question.getCreator());
+            QuestionDTO questionDTO = new QuestionDTO();
+            BeanUtils.copyProperties(question,questionDTO);
+            questionDTO.setUser(user);
+            questionDTOS.add(questionDTO);
+        }
+        paginationDTO.setQuestions(questionDTOS);
+        return paginationDTO;
+    }
+
+    public QuestionDTO getById(Integer id) {
+        Question question = questionMapper.getById(id);
+        User user = userMapper.findById(question.getCreator());
+        QuestionDTO questionDTO = new QuestionDTO();
+        BeanUtils.copyProperties(question,questionDTO);
+        questionDTO.setUser(user);
+        return questionDTO;
+    }
+
+    public void createOrUpdate(Question question) {
+        if(question.getId() == null){
+            //创建
+            question.setGmtCreate(System.currentTimeMillis());
+            question.setGmtModified(question.getGmtCreate());
+            questionMapper.create(question);
+        }else {
+            //更新
+            question.setGmtModified(System.currentTimeMillis());
+            questionMapper.update(question);
+        }
     }
 }
