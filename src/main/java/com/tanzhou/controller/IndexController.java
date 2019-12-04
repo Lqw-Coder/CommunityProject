@@ -1,10 +1,6 @@
 package com.tanzhou.controller;
 
 import com.tanzhou.dto.PaginationDTO;
-import com.tanzhou.dto.QuestionDTO;
-import com.tanzhou.mapper.QuestionMapper;
-import com.tanzhou.mapper.UserMapper;
-import com.tanzhou.model.User;
 import com.tanzhou.service.QuestionService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;

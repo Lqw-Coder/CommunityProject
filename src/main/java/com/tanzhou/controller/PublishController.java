@@ -1,8 +1,6 @@
 package com.tanzhou.controller;
 
 import com.tanzhou.dto.QuestionDTO;
-import com.tanzhou.mapper.QuestionMapper;
-import com.tanzhou.mapper.UserMapper;
 import com.tanzhou.model.Question;
 import com.tanzhou.model.User;
 import com.tanzhou.service.QuestionService;
@@ -14,7 +12,6 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
-import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 
 @Controller
