@@ -15,10 +15,12 @@ public class QuestionController {
     private QuestionService questionService;
 
     @GetMapping("/question/{id}")
-    public String question(@PathVariable(name="id") Integer id, Model model){
+    public String question(@PathVariable(name="id") String id, Model model){
+        Long questionId = null;
+        questionId = Long.parseLong(id);
         //增加阅读数量
-        questionService.incView(id);
-        QuestionDTO questionDTO = questionService.getById(id);
+        questionService.incView(questionId);
+        QuestionDTO questionDTO = questionService.getById(questionId);
         model.addAttribute("question",questionDTO);
         return "question";
     }
