@@ -14,7 +14,8 @@ public enum CommentTypeEnum {
         return false;
     }
 
-    public Integer getType(){
+    public Integer
+    getType(){
         return type;
     }
     CommentTypeEnum(Integer type){

@@ -10,13 +10,16 @@ import com.tanzhou.mapper.UserMapper;
 import com.tanzhou.model.Question;
 import com.tanzhou.model.QuestionExample;
 import com.tanzhou.model.User;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.ibatis.session.RowBounds;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class QuestionService {
@@ -40,7 +43,9 @@ public class QuestionService {
         }
         //设置偏移量
         Integer offset = size *(page-1);
-        List<Question> questions = questionMapper.selectByExampleWithRowbounds(new QuestionExample(),new RowBounds(offset,size));
+        QuestionExample questionExample = new QuestionExample();
+        questionExample.setOrderByClause("gmt_create desc");
+        List<Question> questions = questionMapper.selectByExampleWithRowbounds(questionExample,new RowBounds(offset,size));
 //        List<Question> questions = questionMapper.list(offset,size);
         List<QuestionDTO> questionDTOS = new ArrayList<>();
         for (Question question:questions){
@@ -67,6 +72,8 @@ public class QuestionService {
         Integer offset = size *(page-1);
         QuestionExample questionExample1 = new QuestionExample();
         questionExample1.createCriteria().andIdEqualTo(id);
+        //将获取的数据进行倒序
+        questionExample1.setOrderByClause("gmt_create desc");
         List<Question> questions = questionMapper.selectByExampleWithRowbounds(questionExample1,new RowBounds(offset,size));
 //        List<Question> questions = questionMapper.listByUserId(id,offset,size);
         List<QuestionDTO> questionDTOS = new ArrayList<>();
@@ -103,6 +110,7 @@ public class QuestionService {
             question.setLikeCount(0);
             question.setCommentCount(0);
             questionMapper.insert(question);
+            System.out.println(111);
         }else {
             //更新
             Question updateQuestion = new Question();
@@ -124,5 +132,26 @@ public class QuestionService {
         question.setId(id);
         question.setViewCount(1);
         questionExtMapper.incView(question);
+    }
+
+    public List<QuestionDTO> selectRelated(QuestionDTO queryDTO) {
+        if (StringUtils.isBlank(queryDTO.getTag())) {
+            return new ArrayList<>();
+        }
+        //将tag值获取并将其拆分组装成tag1|tag2|tag3的形式
+        String[]tags = StringUtils.split(queryDTO.getTag(),",");
+        String regexpTag = Arrays.stream(tags).filter(StringUtils::isNotBlank).map(t -> t.replace("+", "").replace("*", "").replace("?", ""))
+                .filter(StringUtils::isNotBlank).collect(Collectors.joining("|"));
+        Question question = new Question();
+        question.setId(queryDTO.getId());
+        question.setTag(regexpTag);
+        List<Question>questions = questionExtMapper.selectRelated(question);
+        //将questions转化为DTO对象
+        List<QuestionDTO> questionDTOS = questions.stream().map(q->{
+            QuestionDTO questionDTO = new QuestionDTO();
+            BeanUtils.copyProperties(q,questionDTO);
+            return questionDTO;
+        }).collect(Collectors.toList());
+        return questionDTOS;
     }
 }
