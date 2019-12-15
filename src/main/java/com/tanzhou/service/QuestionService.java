@@ -71,7 +71,7 @@ public class QuestionService {
         //查询当前用户自己的提问对象
         Integer offset = size *(page-1);
         QuestionExample questionExample1 = new QuestionExample();
-        questionExample1.createCriteria().andIdEqualTo(id);
+        questionExample1.createCriteria().andCreatorEqualTo(id);
         //将获取的数据进行倒序
         questionExample1.setOrderByClause("gmt_create desc");
         List<Question> questions = questionMapper.selectByExampleWithRowbounds(questionExample1,new RowBounds(offset,size));

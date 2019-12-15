@@ -115,3 +115,23 @@ function collapseComments(e) {
 
     }
 }
+/**
+ * 发布页面中tag标签选择框的显示
+ * */
+function showSelectTag() {
+    $("#select-tag").show();
+}
+/**
+ * 点击tag选择框中的标签后将该标签的内容写入input框
+ * */
+function selectTag(e) {
+    var value = e.getAttribute("data-tag");
+    var previous = $("#tag").val();
+    if(previous.indexOf(value) == -1){
+        if(previous){
+            $("#tag").val(previous + ","+value);
+        }else{
+            $("#tag").val(value);
+        }
+    }
+}
