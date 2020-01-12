@@ -3,6 +3,8 @@ package com.tanzhou.service;
 import com.sun.org.apache.regexp.internal.RE;
 import com.tanzhou.dto.CommentDTO;
 import com.tanzhou.enums.CommentTypeEnum;
+import com.tanzhou.enums.NotificationStatusEnum;
+import com.tanzhou.enums.NotificationTypeEnum;
 import com.tanzhou.exception.CustomizeErrorCode;
 import com.tanzhou.exception.CustomizeException;
 import com.tanzhou.mapper.*;
@@ -32,7 +34,10 @@ public class CommentService {
     @Autowired
     private CommentExtMapper commentExtMapper;
 
-    public void insert(Comment comment) {
+    @Autowired
+    private NotificationMapper notificationMapper;
+
+    public void insert(Comment comment,User commentator) {
         if (comment.getParentId()==null || comment.getParentId() == 0){
             throw new CustomizeException(CustomizeErrorCode.TARGET_PARAM_NOT_FOUND);
         }
@@ -45,7 +50,10 @@ public class CommentService {
             if(dbComment == null){
                 throw new CustomizeException(CustomizeErrorCode.COMMENT_NOT_FOUND);
             }
+            //回复问题
+            Question question = questionMapper.selectByPrimaryKey(dbComment.getParentId());
             commentMapper.insert(comment);
+            createNotify(comment,dbComment.getCommentator(),commentator.getName(),question.getTitle(),NotificationTypeEnum.REPLY_COMMENT,question.getId());
             //插入回复评论成功后增加回复数
             Comment parentComment = new Comment();
             parentComment.setId(comment.getParentId());
@@ -59,9 +67,30 @@ public class CommentService {
             }
             comment.setCommentCount(0);
             commentMapper.insert(comment);
+            //通知
+            createNotify(comment,question.getCreator(),commentator.getName(),question.getTitle(),NotificationTypeEnum.REPLY_QUESTION,question.getId());
             question.setCommentCount(1);
             questionExtMapper.incCommentCount(question);
         }
+    }
+    /**
+     *  根据评论以及接收者的id，评论本身的类型（即回复问题还是回复评论）创建通知
+     *
+     * */
+    private void createNotify(Comment comment, Long receiver, String notifierName,String outerTitle,NotificationTypeEnum notificationType,Long outerId){
+        if (comment.getCommentator() == receiver) {
+            return;
+        }
+        Notification notification = new Notification();
+        notification.setGmtCreate(System.currentTimeMillis());
+        notification.setType(notificationType.getType());//其中type代表回复的是问题还是评论
+        notification.setNotifier(comment.getCommentator());//评论人
+        notification.setReceiver(receiver);//问题或评论的user对象
+        notification.setStatus(NotificationStatusEnum.UNREAD.getStatus());//状态代表已读还是未读
+        notification.setOuterid(outerId);//问题id
+        notification.setNotifierName(notifierName);
+        notification.setOuterTitle(outerTitle);
+        notificationMapper.insert(notification);
     }
     public List<CommentDTO> listByTargetId(Long id,CommentTypeEnum typeEnum){
         CommentExample commentExample = new CommentExample();

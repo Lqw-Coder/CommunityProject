@@ -36,4 +36,21 @@
         </where>
         order by gmt_create desc limit 20
     </select>
+    <select id="countBySearch" parameterType="com.tanzhou.dto.QuestionQueryDTO" resultType="java.lang.Integer">
+        select count(1) from QUESTION
+        <where>
+            <if test="search != null">
+                title regexp #{search}
+            </if>
+        </where>
+    </select>
+    <select id="selectBySearch" resultMap="BaseResultMap">
+        select * from QUESTION
+        <where>
+            <if test="search != null">
+                title regexp #{search}
+            </if>
+        </where>
+        order by gmt_Create desc limit (#{page}-1)*#{size},#{size}
+    </select>
 </mapper>

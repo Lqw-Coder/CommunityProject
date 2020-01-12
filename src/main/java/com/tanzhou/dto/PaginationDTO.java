@@ -6,8 +6,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Data
-public class PaginationDTO {
-    private List<QuestionDTO> questions;
+public class PaginationDTO<T> {
+    private List<T> data;
     private boolean showPrevious;
     private boolean showFirstPage;
     private boolean showNext;
@@ -15,15 +15,7 @@ public class PaginationDTO {
     private Integer totalPage;
     private Integer page;
     private List<Integer> pages = new ArrayList<>();
-    public void setPagination(Integer totalCount,Integer page,Integer size){
-        //当不足为一页时，以一页计算
-        totalPage = (totalCount%size==0?totalCount/size:totalCount/size+1);
-        if(page<1){
-            page = 1;
-        }
-        if(page > totalPage){
-            page = totalPage;
-        }
+    public void setPagination(Integer totalPage,Integer page){
         this.page = page;
         //分页部署（当前页前后分别最多有3页，总页数最多为7页）
         // 1 将当前页加入到list集合中

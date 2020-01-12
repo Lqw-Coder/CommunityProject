@@ -3,11 +3,13 @@ package com.tanzhou.provider;
 import com.alibaba.fastjson.JSON;
 import com.tanzhou.dto.AccessTokenDTO;
 import com.tanzhou.dto.GithubUser;
+import lombok.extern.slf4j.Slf4j;
 import okhttp3.*;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 
+@Slf4j
 @Component
 public class GithubProvider {
 
@@ -24,6 +26,7 @@ public class GithubProvider {
             String token = string.split("&")[0].split("=")[1];
             return token;
         } catch (IOException e) {
+            log.error("getAccessToken error,{}", accessTokenDTO, e);
             e.printStackTrace();
         }
         return null;
@@ -38,6 +41,7 @@ public class GithubProvider {
             GithubUser githubUser = JSON.parseObject(string,GithubUser.class);
             return githubUser;
         } catch (IOException e) {
+            log.error("getUser error,{}", accessToken, e);
             e.printStackTrace();
         }
         return null;

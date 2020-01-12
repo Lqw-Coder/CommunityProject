@@ -2,6 +2,7 @@ package com.tanzhou.service;
 
 import com.tanzhou.dto.PaginationDTO;
 import com.tanzhou.dto.QuestionDTO;
+import com.tanzhou.dto.QuestionQueryDTO;
 import com.tanzhou.exception.CustomizeErrorCode;
 import com.tanzhou.exception.CustomizeException;
 import com.tanzhou.mapper.QuestionExtMapper;
@@ -31,22 +32,33 @@ public class QuestionService {
 
     @Autowired
     private UserMapper userMapper;
-    public PaginationDTO list(Integer page,Integer size){
-        PaginationDTO paginationDTO = new PaginationDTO();
-        Integer totalCount = (int)questionMapper.countByExample(new QuestionExample());
-        paginationDTO.setPagination(totalCount,page,size);
+    /**
+     * 首页查询问题数据
+     * */
+    public PaginationDTO list(String search,Integer page,Integer size){
+        PaginationDTO<QuestionDTO> paginationDTO = new PaginationDTO<>();
+        if (StringUtils.isNotBlank(search)) {
+            String[]tags = search.split(" ");
+            search = Arrays.stream(tags).collect(Collectors.joining("|"));
+        }
+        QuestionQueryDTO questionQueryDTO = new QuestionQueryDTO();
+        questionQueryDTO.setSearch(search);
+        Integer totalCount = (int)questionExtMapper.countBySearch(questionQueryDTO);
+        int totalPage = (totalCount % size == 0 ? totalCount/size :totalCount/size+1);
         if(page<1){
             page = 1;
         }
-        if(page > paginationDTO.getTotalPage()){
-            page = paginationDTO.getTotalPage();
+        if(page>totalPage){
+            page = totalPage;
         }
-        //设置偏移量
-        Integer offset = size *(page-1);
-        QuestionExample questionExample = new QuestionExample();
-        questionExample.setOrderByClause("gmt_create desc");
-        List<Question> questions = questionMapper.selectByExampleWithRowbounds(questionExample,new RowBounds(offset,size));
-//        List<Question> questions = questionMapper.list(offset,size);
+        if(size < 0){
+            size = 3;
+        }
+        paginationDTO.setPagination(totalPage,page);
+        Integer offset = page < 1 ? 0 : size * (page - 1);
+        questionQueryDTO.setPage(offset);
+        questionQueryDTO.setSize(size);
+        List<Question> questions = questionExtMapper.selectBySearch(questionQueryDTO);
         List<QuestionDTO> questionDTOS = new ArrayList<>();
         for (Question question:questions){
             User user = userMapper.selectByPrimaryKey(question.getCreator());
@@ -55,19 +67,30 @@ public class QuestionService {
             questionDTO.setUser(user);
             questionDTOS.add(questionDTO);
         }
-        paginationDTO.setQuestions(questionDTOS);
+        paginationDTO.setData(questionDTOS);
         return paginationDTO;
     }
-
+    /**
+     * 查询用户自身的数据
+     * */
     public PaginationDTO list(Long id, Integer page, Integer size) {
         //创建封装对象
-        PaginationDTO paginationDTO = new PaginationDTO();
+        PaginationDTO<QuestionDTO> paginationDTO = new PaginationDTO<>();
         //查询当前用户自己的提问数目
         QuestionExample questionExample = new QuestionExample();
         questionExample.createCriteria().andCreatorEqualTo(id);
         Integer totalCount = (int)questionMapper.countByExample(questionExample);
-//        Integer totalCount = questionMapper.countByUserId(id);
-        paginationDTO.setPagination(totalCount,page,size);
+        int totalPage = (totalCount % size == 0 ? totalCount/size :totalCount/size+1);
+        if(page<1){
+            page = 1;
+        }
+        if(page>totalPage){
+            page = totalPage;
+        }
+        if(size < 0){
+            size = 3;
+        }
+        paginationDTO.setPagination(totalPage,page);
         //查询当前用户自己的提问对象
         Integer offset = size *(page-1);
         QuestionExample questionExample1 = new QuestionExample();
@@ -75,7 +98,6 @@ public class QuestionService {
         //将获取的数据进行倒序
         questionExample1.setOrderByClause("gmt_create desc");
         List<Question> questions = questionMapper.selectByExampleWithRowbounds(questionExample1,new RowBounds(offset,size));
-//        List<Question> questions = questionMapper.listByUserId(id,offset,size);
         List<QuestionDTO> questionDTOS = new ArrayList<>();
         //将question疯转为DTO对象，并将他传入到PagnationDTO
         for (Question question:questions){
@@ -85,7 +107,7 @@ public class QuestionService {
             questionDTO.setUser(user);
             questionDTOS.add(questionDTO);
         }
-        paginationDTO.setQuestions(questionDTOS);
+        paginationDTO.setData(questionDTOS);
         return paginationDTO;
     }
 
